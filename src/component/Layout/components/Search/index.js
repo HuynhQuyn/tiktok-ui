@@ -9,6 +9,8 @@ import { SearchIcon } from '~/component/Icons';
 import styles from './Search.module.scss';
 import { useDebounce } from '~/hooks';
 
+import * as searchServices from '~/apiServices/searchServices';
+
 const cx = classNames.bind(styles);
 
 function Search() {
@@ -22,20 +24,19 @@ function Search() {
     const inputRef = useRef();
 
     useEffect(() => {
-        if (!debounced.trim()) {
+        if (!debounced) {
             setSearchResult([]);
             return;
         }
-        setloading(true);
-        fetch(`https://tiktok.fullstack.edu.vn/api/users/search?q=${encodeURIComponent(debounced)}&type=less`)
-            .then((res) => res.json())
-            .then((res) => {
-                setSearchResult(res.data);
-                setloading(false);
-            })
-            .catch(() => {
-                setloading(false);
-            });
+
+        const fetchApi = async () => {
+            setloading(true);
+            const result = await searchServices.search(debounced);
+            setSearchResult(result);
+
+            setloading(false);
+        };
+        fetchApi();
     }, [debounced]);
 
     const handleClear = () => {
@@ -69,7 +70,10 @@ function Search() {
                     value={searchValue}
                     placeholder="Search accounts and videos"
                     spellCheck={false}
-                    onChange={(e) => setSearchValue(e.target.value)}
+                    onChange={(e) => {
+                        e.target.value = e.target.value.trimStart();
+                        setSearchValue(e.target.value);
+                    }}
                     onFocus={() => setShowResult(true)}
                 />
                 {!!searchValue && !loading && (
